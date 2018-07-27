@@ -2,7 +2,7 @@
 #include <SparkCorePolledTimer.h>
 #include <spark-dallas-temperature.h>
 #define ONE_WIRE_BUS 5
-#define PRECISION 9
+#define PRECISION 2
 
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
@@ -15,13 +15,14 @@ unsigned long lastSwitch = 0;
 unsigned long lastTemp = 0;
 unsigned long onDelay = 2*SEC*60;
 unsigned long offDelay = 10*SEC*60;
-unsigned long tempDelay = 20*SEC;
+unsigned long tempDelay = SEC*60*5;
 unsigned long switchDelay = offDelay;
 char publishString[40];
 
 int totalCycles = 0;
 bool heaterEnabled = false;
 int totalSensors = 0;
+double currentTemp = 0.0;
 
 void setup() {
     Particle.publish("PoolHeaterStartup");
@@ -34,8 +35,15 @@ void setup() {
     totalSensors = sensors.getDeviceCount();
     sprintf(publishString,"%u",totalSensors);
     Particle.publish("SensorCount",publishString);
+
+    if(!sensors.getAddress(poolTemp,0)) Particle.publish("SensorStatus","NO_ADDRESS");
+    sensors.setResolution(poolTemp,PRECISION);
+    sensors.requestTemperatures();
+    currentTemp = sensors.getTempFByIndex(0);
     Particle.variable("currentState",currentState);
     Particle.variable("heaterEnabled",heaterEnabled);
+    Particle.variable("poolTemp",currentTemp);
+
 }
 
 void loop() {
@@ -49,11 +57,10 @@ void loop() {
 void checkTemp() {
   unsigned long now = millis();
   if((now - lastTemp) >= tempDelay) {
-    Particle.publish("CheckingTemp");
     lastTemp = now;
     sensors.requestTemperatures();
-    sprintf(publishString,"%u",sensors.getTempFByIndex(0));
-    Particle.publish("PoolTemp",publishString);
+    currentTemp = sensors.getTempFByIndex(0);
+    Particle.publish("PoolTemp",String(currentTemp));
   }
 }
 void switchPump() {
