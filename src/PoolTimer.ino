@@ -10,12 +10,13 @@ DeviceAddress poolTemp, heaterTemp;
 
 bool currentState = LOW;
 const long SEC = 1000;
+const long MINUTE = 60000;
 
 unsigned long lastSwitch = 0;
 unsigned long lastTemp = 0;
 unsigned long onDelay = 2*SEC*60;
 unsigned long offDelay = 10*SEC*60;
-unsigned long tempDelay = SEC*60*5;
+unsigned long tempDelay = MINUTE*2;
 unsigned long switchDelay = offDelay;
 char publishString[40];
 
