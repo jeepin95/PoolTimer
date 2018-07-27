@@ -1,22 +1,39 @@
 // This #include statement was automatically added by the Particle IDE.
 #include <SparkCorePolledTimer.h>
+#include <spark-dallas-temperature.h>
+#define ONE_WIRE_BUS 5
+#define PRECISION 9
+
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+DeviceAddress poolTemp, heaterTemp;
 
 bool currentState = LOW;
 const long SEC = 1000;
 
 unsigned long lastSwitch = 0;
+unsigned long lastTemp = 0;
 unsigned long onDelay = 2*SEC*60;
 unsigned long offDelay = 10*SEC*60;
+unsigned long tempDelay = 20*SEC;
 unsigned long switchDelay = offDelay;
+char publishString[40];
 
 int totalCycles = 0;
 bool heaterEnabled = false;
+int totalSensors = 0;
 
 void setup() {
     Particle.publish("PoolHeaterStartup");
     Particle.subscribe("enablePoolTimer",enablePoolTimer);
     pinMode(6,OUTPUT);
     digitalWrite(6,currentState);
+    Particle.publish("SensorStatus","STARTING");
+    sensors.begin();
+    Particle.publish("SensorStatus","STARTED");
+    totalSensors = sensors.getDeviceCount();
+    sprintf(publishString,"%u",totalSensors);
+    Particle.publish("SensorCount",publishString);
     Particle.variable("currentState",currentState);
     Particle.variable("heaterEnabled",heaterEnabled);
 }
@@ -25,8 +42,20 @@ void loop() {
     if(heaterEnabled) {
         switchPump();
     }
+    if(totalSensors > 0) {
+      checkTemp();
+    }
 }
-
+void checkTemp() {
+  unsigned long now = millis();
+  if((now - lastTemp) >= tempDelay) {
+    Particle.publish("CheckingTemp");
+    lastTemp = now;
+    sensors.requestTemperatures();
+    sprintf(publishString,"%u",sensors.getTempFByIndex(0));
+    Particle.publish("PoolTemp",publishString);
+  }
+}
 void switchPump() {
     unsigned long now = millis();
     if((now - lastSwitch) >= switchDelay) {
