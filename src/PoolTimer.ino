@@ -25,6 +25,9 @@ bool heaterEnabled = false;
 int totalSensors = 0;
 double currentTemp = 0.0;
 double newTemp = 0.0;
+
+unsigned int invalidCount = 0;
+
 void setup() {
     Particle.publish("PoolHeaterStartup");
     Particle.subscribe("enablePoolTimer",enablePoolTimer);
@@ -64,6 +67,9 @@ void checkTemp() {
       currentTemp = newTemp;
       Particle.publish("PoolTemp",String(currentTemp));
 
+    } else {
+      invalidCount++;
+      Particle.publish("InvalidTempCounter",String(invalidCount));
     }
   }
 }
