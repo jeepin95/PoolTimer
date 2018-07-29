@@ -24,7 +24,7 @@ int totalCycles = 0;
 bool heaterEnabled = false;
 int totalSensors = 0;
 double currentTemp = 0.0;
-
+double newTemp = 0.0;
 void setup() {
     Particle.publish("PoolHeaterStartup");
     Particle.subscribe("enablePoolTimer",enablePoolTimer);
@@ -40,28 +40,31 @@ void setup() {
     if(!sensors.getAddress(poolTemp,0)) Particle.publish("SensorStatus","NO_ADDRESS");
     sensors.setResolution(poolTemp,PRECISION);
     sensors.requestTemperatures();
-    currentTemp = sensors.getTempFByIndex(0);
+    //currentTemp = sensors.getTempFByIndex(0);
     Particle.variable("currentState",currentState);
     Particle.variable("heaterEnabled",heaterEnabled);
     Particle.variable("poolTemp",currentTemp);
-
+    checkTemp();
 }
 
 void loop() {
     if(heaterEnabled) {
         switchPump();
     }
-    if(totalSensors > 0) {
+
       checkTemp();
-    }
 }
 void checkTemp() {
   unsigned long now = millis();
   if((now - lastTemp) >= tempDelay) {
     lastTemp = now;
     sensors.requestTemperatures();
-    currentTemp = sensors.getTempFByIndex(0);
-    Particle.publish("PoolTemp",String(currentTemp));
+    newTemp = sensors.getTempFByIndex(0);
+    if(newTemp > 0.0) {
+      currentTemp = newTemp;
+      Particle.publish("PoolTemp",String(currentTemp));
+
+    }
   }
 }
 void switchPump() {
