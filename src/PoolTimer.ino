@@ -2,8 +2,9 @@
 #include <SparkCorePolledTimer.h>
 #include <spark-dallas-temperature.h>
 #define ONE_WIRE_BUS 5
-#define PRECISION 2
+#define PRECISION 9
 
+#define VERSION "1.1"
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 DeviceAddress poolTemp, heaterTemp;
@@ -14,8 +15,8 @@ const long MINUTE = 60000;
 
 unsigned long lastSwitch = 0;
 unsigned long lastTemp = 0;
-unsigned long onDelay = 2*SEC*60;
-unsigned long offDelay = 10*SEC*60;
+unsigned long onDelay = 1*SEC*60;
+unsigned long offDelay = 15*SEC*60;
 unsigned long tempDelay = MINUTE*2;
 unsigned long switchDelay = offDelay;
 char publishString[40];
@@ -29,7 +30,7 @@ double newTemp = 0.0;
 unsigned int invalidCount = 0;
 
 void setup() {
-    Particle.publish("PoolHeaterStartup");
+    Particle.publish("PoolHeaterStartup",VERSION);
     Particle.subscribe("enablePoolTimer",enablePoolTimer);
     pinMode(6,OUTPUT);
     digitalWrite(6,currentState);
